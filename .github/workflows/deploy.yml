@@ -34,6 +34,7 @@ jobs:
         env:
           USER: ${{ secrets.USER }}
           HOST: ${{ secrets.HOST }}
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
         run: |
           echo "${PRIVATE_KEY}" > private_key.pem
           chmod 600 private_key.pem
