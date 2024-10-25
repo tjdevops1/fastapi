@@ -18,32 +18,27 @@ jobs:
         with:
           python-version: '3.9'
 
-      - name: Cache Python packages
-        uses: actions/cache@v3
-        with:
-          path: venv
-          key: ${{ runner.os }}-python-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-python-
-
       - name: Install dependencies
         run: |
           python -m venv venv
           . venv/bin/activate
           pip install --no-cache-dir fastapi uvicorn
 
-      - name: Run tests
-        run: |
-          . venv/bin/activate
-          # You can add your test command here, e.g., pytest if you have tests
-          # pytest tests/  # Uncomment and modify if you have tests
-
       - name: Build Docker image
         run: |
           docker build -t fastapi-app .
 
-      - name: Run on EC2
+      - name: Deploy to EC2
         env:
           PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
-          USER
+          USER: ${{ secrets.EC2_USER }}
+          HOST: ${{ secrets.EC2_HOST }}
+        run: |
+          echo "${PRIVATE_KEY}" > private_key.pem
+          chmod 600 private_key.pem
+          ssh -o StrictHostKeyChecking=no -i private_key.pem $USER@$HOST "
+            docker stop fastapi-app || true &&
+            docker rm fastapi-app || true &&
+            docker run -d --name fastapi-app -p 80:80 fastapi-app
+          "
 
