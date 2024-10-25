@@ -1,0 +1,33 @@
+name: CI/CD for FastAPI
+
+on:
+  push:
+    branches:
+      - main  # Change this to your default branch if it's not main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Build Docker image
+        run: |
+          cd fastapi/venv
+          docker build -t fastapi-app .
+
+      - name: SSH to EC2 and run the container
+        env:
+          PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
+          HOST: your-ec2-public-ip  # Replace with your EC2 public IP or DNS
+          USER: ubuntu  # Change if using a different user
+        run: |
+          echo "${PRIVATE_KEY}" > private_key.pem
+          chmod 600 private_key.pem
+          ssh -o StrictHostKeyChecking=no -i private_key.pem $USER@$HOST "docker stop fastapi-app || true && docker rm fastapi-app || true && docker run -d --name fastapi-app -p 80:80 fastapi-app"
+
