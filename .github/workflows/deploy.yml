@@ -20,6 +20,18 @@ jobs:
         run: |
           docker build -t fastapi-app .
 
+      - name: Login to Docker Hub
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: |
+          echo "${DOCKER_PASSWORD}" | docker login -u "${DOCKER_USERNAME}" --password-stdin
+
+      - name: Push Docker image to Docker Hub
+        run: |
+          docker tag fastapi-app ${DOCKER_USERNAME}/fastapi-app:latest
+          docker push ${DOCKER_USERNAME}/fastapi-app:latest
+
       - name: Decode the private key
         env:
           PRIVATE_KEY_B64: ${{ secrets.EC2_SSH_KEY_B64 }}
@@ -32,5 +44,10 @@ jobs:
           HOST: 52.59.196.193  # Replace with your EC2 public IP or DNS
           USER: ubuntu  # Change if using a different user
         run: |
-          ssh -o StrictHostKeyChecking=no -i private_key.pem $USER@$HOST "docker stop fastapi-app || true && docker rm fastapi-app || true && docker run -d --name fastapi-app -p 80:80 fastapi-app"
+          ssh -o StrictHostKeyChecking=no -i private_key.pem $USER@$HOST "
+            docker pull ${DOCKER_USERNAME}/fastapi-app:latest && 
+            docker stop fastapi-app || true && 
+            docker rm fastapi-app || true && 
+            docker run -d --name fastapi-app -p 80:80 ${DOCKER_USERNAME}/fastapi-app:latest
+          "
 
