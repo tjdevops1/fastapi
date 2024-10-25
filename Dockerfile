@@ -1,19 +1,19 @@
-#test Use the official Python image
+# Use the official Python image from the Docker Hub
 FROM python:3.9-slim
 
-# Set working directory
+# Set the working directory
 WORKDIR /app
 
-# Copy the current directory contents into the container at /app
-COPY . .
+# Copy the requirements file and install dependencies
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Install any needed packages
-RUN pip install --no-cache-dir fastapi uvicorn
+# Copy the FastAPI app code
+COPY main.py .
 
-# Make port 80 available to the world outside this container
+# Expose port 80
 EXPOSE 80
 
-# Run the application
+# Command to run the FastAPI app with Uvicorn
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80"]
-
 
