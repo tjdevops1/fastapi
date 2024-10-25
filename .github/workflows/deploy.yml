@@ -20,19 +20,21 @@ jobs:
 
       - name: Install dependencies
         run: |
+          python -m venv venv
+          . venv/bin/activate
           pip install --no-cache-dir fastapi uvicorn
 
       - name: Build Docker image
         run: |
           docker build -t fastapi-app .
 
-      - name: Deploy to EC2
+      - name: Run on EC2
         env:
-          PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
+          PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY_B64 }}
           USER: ${{ secrets.EC2_USER }}
           HOST: ${{ secrets.EC2_HOST }}
         run: |
-          echo "${PRIVATE_KEY}" > private_key.pem
+          echo "${PRIVATE_KEY}" | base64 --decode > private_key.pem
           chmod 600 private_key.pem
           ssh -o StrictHostKeyChecking=no -i private_key.pem $USER@$HOST "
             docker stop fastapi-app || true &&
