@@ -18,13 +18,13 @@ jobs:
 
       - name: Build Docker image
         run: |
-          cd fastapi/venv
+          cd fastapi/venv  # Make sure this is the correct path
           docker build -t fastapi-app .
 
       - name: SSH to EC2 and run the container
         env:
           PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
-          HOST: your-ec2-public-ip  # Replace with your EC2 public IP or DNS
+          HOST: 52.59.196.193  # Replace with your EC2 public IP or DNS
           USER: ubuntu  # Change if using a different user
         run: |
           echo "${PRIVATE_KEY}" > private_key.pem
