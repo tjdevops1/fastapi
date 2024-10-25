@@ -11,14 +11,14 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3  # Updated to v3
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2  # Updated to v2
 
       - name: Build Docker image
         run: |
-          cd fastapi/venv  # Make sure this is the correct path
+          cd fastapi/venv  # Ensure this path is correct
           docker build -t fastapi-app .
 
       - name: SSH to EC2 and run the container
