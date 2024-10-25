@@ -16,14 +16,18 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2  # Ensure this is the latest version
 
+      - name: List all files in the working directory
+        run: |
+          ls -la  # Check if the fastapi directory is present
+
       - name: List files in fastapi directory
         run: |
-          ls -la fastapi  # Make sure to check for your Dockerfile
+          ls -la fastapi  # Confirm the Dockerfile is present here
 
       - name: Build Docker image
         run: |
-          cd fastapi  # Ensure this path is correct
-          docker build -t fastapi-app .
+          cd fastapi  # Ensure you're in the correct directory
+          docker build -t fastapi-app .  # Build the Docker image
 
       - name: SSH to EC2 and run the container
         env:
