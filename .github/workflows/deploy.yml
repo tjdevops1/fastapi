@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: Build and Deploy FastAPI App
 
 on:
   push:
@@ -13,30 +13,32 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
 
-      - name: Login to Docker Hub
+      - name: Install dependencies
         run: |
-          echo "Logging in to Docker Hub"
-          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+          python -m venv venv
+          . venv/bin/activate
+          pip install --no-cache-dir fastapi uvicorn
 
       - name: Build Docker image
         run: |
           docker build -t fastapi-app .
 
-      - name: Push Docker image to Docker Hub
-        run: |
-          docker tag fastapi-app ${DOCKER_USERNAME}/fastapi-app:latest
-          docker push ${DOCKER_USERNAME}/fastapi-app:latest
-
-      - name: SSH to server and run Docker
+      - name: Run on EC2
         env:
-          USER: ${{ secrets.USER }}
-          HOST: ${{ secrets.HOST }}
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
+          USER: ${{ secrets.EC2_USER }}
+          HOST: ${{ secrets.EC2_HOST }}
         run: |
           echo "${PRIVATE_KEY}" > private_key.pem
           chmod 600 private_key.pem
-          ssh -o StrictHostKeyChecking=no -i private_key.pem $USER@$HOST "docker stop fastapi-app || true && docker rm fastapi-app || true && docker run -d --name fastapi-app -p 80:80 ${DOCKER_USERNAME}/fastapi-app:latest"
+          ssh -o StrictHostKeyChecking=no -i private_key.pem $USER@$HOST "
+            docker stop fastapi-app || true && 
+            docker rm fastapi-app || true && 
+            docker run -d --name fastapi-app -p 80:80 fastapi-app
+          "
 
