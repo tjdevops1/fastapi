@@ -20,8 +20,6 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python -m venv venv
-          . venv/bin/activate
           pip install --no-cache-dir fastapi uvicorn
 
       - name: Build Docker image
