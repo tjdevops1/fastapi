@@ -1,4 +1,4 @@
-name: CI/CD for FastAPI
+name: CI/CD Pipeline
 
 on:
   push:
@@ -16,38 +16,26 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
+      - name: Login to Docker Hub
+        run: |
+          echo "Logging in to Docker Hub"
+          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
       - name: Build Docker image
         run: |
           docker build -t fastapi-app .
-
-      - name: Login to Docker Hub
-        env:
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-        run: |
-          echo "${DOCKER_PASSWORD}" | docker login -u "${DOCKER_USERNAME}" --password-stdin
 
       - name: Push Docker image to Docker Hub
         run: |
           docker tag fastapi-app ${DOCKER_USERNAME}/fastapi-app:latest
           docker push ${DOCKER_USERNAME}/fastapi-app:latest
 
-      - name: Decode the private key
+      - name: SSH to server and run Docker
         env:
-          PRIVATE_KEY_B64: ${{ secrets.EC2_SSH_KEY_B64 }}
+          USER: ${{ secrets.USER }}
+          HOST: ${{ secrets.HOST }}
         run: |
-          echo "${PRIVATE_KEY_B64}" | base64 --decode > private_key.pem
+          echo "${PRIVATE_KEY}" > private_key.pem
           chmod 600 private_key.pem
-
-      - name: SSH to EC2 and run the container
-        env:
-          HOST: 52.59.196.193  # Replace with your EC2 public IP or DNS
-          USER: ubuntu  # Change if using a different user
-        run: |
-          ssh -o StrictHostKeyChecking=no -i private_key.pem $USER@$HOST "
-            docker pull ${DOCKER_USERNAME}/fastapi-app:latest && 
-            docker stop fastapi-app || true && 
-            docker rm fastapi-app || true && 
-            docker run -d --name fastapi-app -p 80:80 ${DOCKER_USERNAME}/fastapi-app:latest
-          "
+          ssh -o StrictHostKeyChecking=no -i private_key.pem $USER@$HOST "docker stop fastapi-app || true && docker rm fastapi-app || true && docker run -d --name fastapi-app -p 80:80 ${DOCKER_USERNAME}/fastapi-app:latest"
 
