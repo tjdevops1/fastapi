@@ -27,5 +27,5 @@ jobs:
           ssh -o StrictHostKeyChecking=no -i private_key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
             sudo docker stop fastapi-app || true
             sudo docker rm fastapi-app || true
-            sudo docker run -d --name fastapi-app -p 80:80 fastapi-app
+            sudo docker run -d --name fastapi-app -p 8080:80 fastapi-app
           EOF
